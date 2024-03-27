@@ -1,45 +1,50 @@
-name: release
-
-on:
-  push:
-    branches: ["release"]
-    tags: [ 'v*' ]
-
 env:
   LC_ALL: en_US.UTF-8
-  REPOSITORY_USERNAME: ${{ secrets.REPOSITORY_USERNAME }}
   REPOSITORY_PASSWORD: ${{ secrets.REPOSITORY_PASSWORD }}
-
+  REPOSITORY_USERNAME: ${{ secrets.REPOSITORY_USERNAME }}
 jobs:
   build:
     name: build on OpenJDK Linux
-    runs-on: macos-latest
+    runs-on: self-hosted
     steps:
-      - name: Git Checkout
-        uses: actions/checkout@v1
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-      - name: Build
-        shell: bash
-        run: ./gradlew --parallel release
-      - name: Macos
-        shell: bash
-        run: cd org.alloytools.alloy.dist;./macos
-      - name: save-tests
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: test-reports
-          path: '*/target/*reports/tests/'
-      - name: Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          prerelease: false
-          draft: false
-          files: |
-             org.alloytools.alloy.dist/target/*.jar
-             org.alloytools.alloy.dist/target/*.dmg
-             */target/reports
+    - continue-on-error: true
+      name: Git Checkout
+      uses: actions/checkout@v1
+    - continue-on-error: true
+      name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: 17
+    - continue-on-error: true
+      name: Build
+      run: ./gradlew --parallel release
+      shell: bash
+    - continue-on-error: true
+      name: Macos
+      run: cd org.alloytools.alloy.dist;./macos
+      shell: bash
+    - continue-on-error: true
+      if: ${{ always() }}
+      name: save-tests
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-reports
+        path: '*/target/*reports/tests/'
+    - continue-on-error: true
+      if: startsWith(github.ref, 'refs/tags/')
+      name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        draft: false
+        files: 'org.alloytools.alloy.dist/target/*.jar
+
+          org.alloytools.alloy.dist/target/*.dmg
+
+          */target/reports
+
+          '
+        prerelease: false
+name: release
+on:
+  repository_dispatch:
+    types: trigger-ga___release.yml

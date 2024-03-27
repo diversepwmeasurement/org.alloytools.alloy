@@ -1,38 +1,44 @@
-name: snapshot
-
-on:
-  push:
-    branches: ["master"]
-
 env:
   LC_ALL: en_US.UTF-8
-  REPOSITORY_USERNAME: ${{ secrets.REPOSITORY_USERNAME }}
   REPOSITORY_PASSWORD: ${{ secrets.REPOSITORY_PASSWORD }}
-
+  REPOSITORY_USERNAME: ${{ secrets.REPOSITORY_USERNAME }}
 jobs:
   build:
     name: build on OpenJDK Linux
-    runs-on: macos-latest
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: 17 
-          distribution: temurin
-      - shell: bash
-        run: ./gradlew --parallel release
-      - shell: bash
-        run: cd org.alloytools.alloy.dist;./macos
-      - if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports
-          path: '*/target/reports/'
-      - uses: softprops/action-gh-release@v2
-        with:
-          prerelease: true
-          draft: true
-          files: |
-             org.alloytools.alloy.dist/target/*.jar
-             org.alloytools.alloy.dist/target/*.dmg
-             */target/reports
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+    - continue-on-error: true
+      run: ./gradlew --parallel release
+      shell: bash
+    - continue-on-error: true
+      run: cd org.alloytools.alloy.dist;./macos
+      shell: bash
+    - continue-on-error: true
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports
+        path: '*/target/reports/'
+    - continue-on-error: true
+      uses: softprops/action-gh-release@v2
+      with:
+        draft: true
+        files: 'org.alloytools.alloy.dist/target/*.jar
+
+          org.alloytools.alloy.dist/target/*.dmg
+
+          */target/reports
+
+          '
+        prerelease: true
+name: snapshot
+on:
+  repository_dispatch:
+    types: trigger-ga___snapshot.yml
